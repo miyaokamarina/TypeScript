@@ -4028,7 +4028,7 @@ namespace ts {
         isUnknownSymbol(symbol: Symbol): boolean;
         /* @internal */ getMergedSymbol(symbol: Symbol): Symbol;
 
-        getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | number | undefined;
+        getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | bigint | number | undefined;
         isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: string): boolean;
         /** Exclude accesses to private properties or methods with a `this` parameter that `type` doesn't satisfy. */
         /* @internal */ isValidPropertyAccessForCompletions(node: PropertyAccessExpression | ImportTypeNode | QualifiedName, type: Type, property: Symbol): boolean;
@@ -4520,7 +4520,7 @@ namespace ts {
         isSymbolAccessible(symbol: Symbol, enclosingDeclaration: Node | undefined, meaning: SymbolFlags | undefined, shouldComputeAliasToMarkVisible: boolean): SymbolAccessibilityResult;
         isEntityNameVisible(entityName: EntityNameOrEntityNameExpression, enclosingDeclaration: Node): SymbolVisibilityResult;
         // Returns the constant value this property access resolves to, or 'undefined' for a non-constant
-        getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | number | undefined;
+        getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | bigint | number | undefined;
         getReferencedValueDeclaration(reference: Identifier): Declaration | undefined;
         getTypeReferenceSerializationKind(typeName: EntityName, location?: Node): TypeReferenceSerializationKind;
         isOptionalParameter(node: ParameterDeclaration): boolean;
@@ -4830,7 +4830,7 @@ namespace ts {
         resolvedSymbol?: Symbol;            // Cached name resolution result
         resolvedIndexInfo?: IndexInfo;      // Cached indexing info resolution result
         effectsSignature?: Signature;       // Signature with possible control flow effects
-        enumMemberValue?: string | number;  // Constant value of enum member
+        enumMemberValue?: string | bigint | number;  // Constant value of enum member
         isVisible?: boolean;                // Is this node visible
         containsArgumentsReference?: boolean; // Whether a function-like declaration contains an 'arguments' reference
         hasReportedStatementInAmbientContext?: boolean; // Cache boolean if we report statements in ambient context
@@ -6432,7 +6432,7 @@ namespace ts {
         commentRange?: TextRange;                // The text range to use when emitting leading or trailing comments
         sourceMapRange?: SourceMapRange;         // The text range to use when emitting leading or trailing source mappings
         tokenSourceMapRanges?: (SourceMapRange | undefined)[]; // The text range to use when emitting source mappings for tokens
-        constantValue?: string | number;         // The constant value of an expression
+        constantValue?: string | bigint | number;         // The constant value of an expression
         externalHelpersModuleName?: Identifier;  // The local name for an imported helpers module
         externalHelpers?: boolean;
         helpers?: EmitHelper[];                  // Emit helpers for the node

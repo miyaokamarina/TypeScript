@@ -6611,6 +6611,7 @@ namespace ts {
                             const initializedValue = p.declarations && p.declarations[0] && isEnumMember(p.declarations[0]) ? getConstantValue(p.declarations[0] as EnumMember) : undefined;
                             return factory.createEnumMember(unescapeLeadingUnderscores(p.escapedName), initializedValue === undefined ? undefined :
                                 typeof initializedValue === "string" ? factory.createStringLiteral(initializedValue) :
+                                typeof initializedValue === "bigint" ? factory.createBigIntLiteral(bigIntToPseudoBigInt(initializedValue)) :
                                 factory.createNumericLiteral(initializedValue));
                         })
                     ), modifierFlags);
@@ -9409,6 +9410,7 @@ namespace ts {
             switch (expr.kind) {
                 case SyntaxKind.StringLiteral:
                 case SyntaxKind.NumericLiteral:
+                case SyntaxKind.BigIntLiteral:
                 case SyntaxKind.NoSubstitutionTemplateLiteral:
                     return true;
                 case SyntaxKind.PrefixUnaryExpression:
@@ -9460,7 +9462,9 @@ namespace ts {
                     if (declaration.kind === SyntaxKind.EnumDeclaration) {
                         for (const member of (<EnumDeclaration>declaration).members) {
                             const value = getEnumMemberValue(member);
-                            const memberType = getFreshTypeOfLiteralType(getLiteralType(value !== undefined ? value : 0, enumCount, getSymbolOfNode(member)));
+                            const memberType = getFreshTypeOfLiteralType(getLiteralType(value !== undefined ?
+                                typeof value === "bigint" ? bigIntToPseudoBigInt(value) :
+                                value : 0, enumCount, getSymbolOfNode(member)));
                             getSymbolLinks(getSymbolOfNode(member)).declaredType = memberType;
                             memberTypeList.push(getRegularTypeOfLiteralType(memberType));
                         }
@@ -35664,16 +35668,16 @@ namespace ts {
             const nodeLinks = getNodeLinks(node);
             if (!(nodeLinks.flags & NodeCheckFlags.EnumValuesComputed)) {
                 nodeLinks.flags |= NodeCheckFlags.EnumValuesComputed;
-                let autoValue: number | undefined = 0;
+                let autoValue: bigint | number | undefined = 0;
                 for (const member of node.members) {
                     const value = computeMemberValue(member, autoValue);
                     getNodeLinks(member).enumMemberValue = value;
-                    autoValue = typeof value === "number" ? value + 1 : undefined;
+                    autoValue = typeof value === "number" ? value + 1 : typeof value === "bigint" ? value + BigInt(1) : undefined;
                 }
             }
         }
 
-        function computeMemberValue(member: EnumMember, autoValue: number | undefined) {
+        function computeMemberValue(member: EnumMember, autoValue: number | bigint | undefined) {
             if (isComputedNonLiteralName(member.name)) {
                 error(member.name, Diagnostics.Computed_property_names_are_not_allowed_in_enums);
             }
@@ -35702,7 +35706,7 @@ namespace ts {
             return undefined;
         }
 
-        function computeConstantValue(member: EnumMember): string | number | undefined {
+        function computeConstantValue(member: EnumMember): string | bigint | number | undefined {
             const enumKind = getEnumKind(getSymbolOfNode(member.parent));
             const isConstEnum = isEnumConst(member.parent);
             const initializer = member.initializer!;
@@ -35712,6 +35716,9 @@ namespace ts {
                     error(initializer, isNaN(value) ?
                         Diagnostics.const_enum_member_initializer_was_evaluated_to_disallowed_value_NaN :
                         Diagnostics.const_enum_member_initializer_was_evaluated_to_a_non_finite_value);
+                }
+                else if (!isConstEnum && typeof value === "bigint") {
+                    error(initializer, Diagnostics.Type_0_is_not_assignable_to_type_1, "bigint", "number | string");
                 }
             }
             else if (enumKind === EnumKind.Literal) {
@@ -35736,11 +35743,18 @@ namespace ts {
             }
             return value;
 
-            function evaluate(expr: Expression): string | number | undefined {
+            function evaluate(expr: Expression): string | bigint | number | undefined {
                 switch (expr.kind) {
                     case SyntaxKind.PrefixUnaryExpression:
                         const value = evaluate((<PrefixUnaryExpression>expr).operand);
                         if (typeof value === "number") {
+                            switch ((<PrefixUnaryExpression>expr).operator) {
+                                case SyntaxKind.PlusToken: return value;
+                                case SyntaxKind.MinusToken: return -value;
+                                case SyntaxKind.TildeToken: return ~value;
+                            }
+                        }
+                        if (typeof value === "bigint") {
                             switch ((<PrefixUnaryExpression>expr).operator) {
                                 case SyntaxKind.PlusToken: return value;
                                 case SyntaxKind.MinusToken: return -value;
@@ -35767,6 +35781,31 @@ namespace ts {
                                 case SyntaxKind.AsteriskAsteriskToken: return left ** right;
                             }
                         }
+                        else if (typeof left === "bigint" && typeof right === "bigint") {
+                            switch ((<BinaryExpression>expr).operatorToken.kind) {
+                                case SyntaxKind.BarToken: return left | right;
+                                case SyntaxKind.AmpersandToken: return left & right;
+                                case SyntaxKind.GreaterThanGreaterThanToken: return left >> right;
+                                case SyntaxKind.LessThanLessThanToken: return left << right;
+                                case SyntaxKind.CaretToken: return left ^ right;
+                                case SyntaxKind.AsteriskToken: return left * right;
+                                case SyntaxKind.SlashToken: {
+                                    if (Number(left) === 0 && Number(right) === 0) {
+                                        return undefined;
+                                    }
+
+                                    return left / right;
+                                }
+                                case SyntaxKind.PlusToken: return left + right;
+                                case SyntaxKind.MinusToken: return left - right;
+                                case SyntaxKind.PercentToken: return left % right;
+                                // case SyntaxKind.AsteriskAsteriskToken: return left ** right; // TODO
+                            }
+                        }
+                        else if (typeof left === "number" && typeof right === "bigint" || typeof left === "bigint" && typeof right === "number") {
+                            error(expr, Diagnostics.Operator_0_cannot_be_applied_to_types_1_and_2, tokenToString((<BinaryExpression>expr).operatorToken.kind), typeof left, typeof right);
+                            return undefined;
+                        }
                         else if (typeof left === "string" && typeof right === "string" && (<BinaryExpression>expr).operatorToken.kind === SyntaxKind.PlusToken) {
                             return left + right;
                         }
@@ -35777,6 +35816,8 @@ namespace ts {
                     case SyntaxKind.NumericLiteral:
                         checkGrammarNumericLiteral(<NumericLiteral>expr);
                         return +(<NumericLiteral>expr).text;
+                    case SyntaxKind.BigIntLiteral:
+                        return BigInt((<BigIntLiteral>expr).text.replace(/n$/, ""));
                     case SyntaxKind.ParenthesizedExpression:
                         return evaluate((<ParenthesizedExpression>expr).expression);
                     case SyntaxKind.Identifier:
@@ -37963,7 +38004,7 @@ namespace ts {
             return getNodeLinks(node).flags || 0;
         }
 
-        function getEnumMemberValue(node: EnumMember): string | number | undefined {
+        function getEnumMemberValue(node: EnumMember): string | bigint | number | undefined {
             computeEnumMemberValues(node.parent);
             return getNodeLinks(node).enumMemberValue;
         }
@@ -37978,7 +38019,7 @@ namespace ts {
             return false;
         }
 
-        function getConstantValue(node: EnumMember | AccessExpression): string | number | undefined {
+        function getConstantValue(node: EnumMember | AccessExpression): string | bigint | number | undefined {
             if (node.kind === SyntaxKind.EnumMember) {
                 return getEnumMemberValue(node);
             }

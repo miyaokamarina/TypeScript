@@ -2483,7 +2483,9 @@ namespace ts {
         function transformEnumMemberDeclarationValue(member: EnumMember): Expression {
             const value = resolver.getConstantValue(member);
             if (value !== undefined) {
-                return typeof value === "string" ? factory.createStringLiteral(value) : factory.createNumericLiteral(value);
+                return typeof value === "string" ? factory.createStringLiteral(value) :
+                    typeof value === "bigint" ? factory.createBigIntLiteral(bigIntToPseudoBigInt(value)) :
+                    factory.createNumericLiteral(value);
             }
             else {
                 enableSubstitutionForNonQualifiedEnumMembers();
@@ -3342,7 +3344,9 @@ namespace ts {
                 // track the constant value on the node for the printer in needsDotDotForPropertyAccess
                 setConstantValue(node, constantValue);
 
-                const substitute = typeof constantValue === "string" ? factory.createStringLiteral(constantValue) : factory.createNumericLiteral(constantValue);
+                const substitute = typeof constantValue === "string" ? factory.createStringLiteral(constantValue) :
+                    typeof constantValue === "bigint" ? factory.createBigIntLiteral(bigIntToPseudoBigInt(constantValue)) :
+                    factory.createNumericLiteral(constantValue);
                 if (!compilerOptions.removeComments) {
                     const originalNode = getOriginalNode(node, isAccessExpression);
                     const propertyName = isPropertyAccessExpression(originalNode)
@@ -3358,7 +3362,7 @@ namespace ts {
             return node;
         }
 
-        function tryGetConstEnumValue(node: Node): string | number | undefined {
+        function tryGetConstEnumValue(node: Node): string | bigint | number | undefined {
             if (compilerOptions.isolatedModules) {
                 return undefined;
             }

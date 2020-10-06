@@ -2220,7 +2220,7 @@ declare namespace ts {
         isUndefinedSymbol(symbol: Symbol): boolean;
         isArgumentsSymbol(symbol: Symbol): boolean;
         isUnknownSymbol(symbol: Symbol): boolean;
-        getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | number | undefined;
+        getConstantValue(node: EnumMember | PropertyAccessExpression | ElementAccessExpression): string | bigint | number | undefined;
         isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName | ImportTypeNode, propertyName: string): boolean;
         /** Follow all aliases to get the original symbol. */
         getAliasedSymbol(symbol: Symbol): Symbol;
@@ -4302,11 +4302,11 @@ declare namespace ts {
     /**
      * Gets the constant value to emit for an expression representing an enum.
      */
-    function getConstantValue(node: AccessExpression): string | number | undefined;
+    function getConstantValue(node: AccessExpression): string | bigint | number | undefined;
     /**
      * Sets the constant value to emit for an expression.
      */
-    function setConstantValue(node: AccessExpression, value: string | number): AccessExpression;
+    function setConstantValue(node: AccessExpression, value: string | bigint | number): AccessExpression;
     /**
      * Adds an EmitHelper to a node.
      */

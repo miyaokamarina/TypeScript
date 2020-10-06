@@ -677,8 +677,8 @@ namespace ts {
         return Debug.fail(`Literal kind '${node.kind}' not accounted for.`);
     }
 
-    export function getTextOfConstantValue(value: string | number) {
-        return isString(value) ? '"' + escapeNonAsciiString(value) + '"' : "" + value;
+    export function getTextOfConstantValue(value: string | bigint | number) {
+        return isString(value) ? '"' + escapeNonAsciiString(value) + '"' : typeof value === "bigint" ? "" + value + "n" : "" + value;
     }
 
     // Make an identifier from an external module name by extracting the string after the last "/" and replacing
@@ -6784,6 +6784,12 @@ namespace ts {
 
     export function pseudoBigIntToString({negative, base10Value}: PseudoBigInt): string {
         return (negative && base10Value !== "0" ? "-" : "") + base10Value;
+    }
+
+    export function bigIntToPseudoBigInt(value: bigint): PseudoBigInt {
+        const negative = value < BigInt(0);
+        const base10Value = negative ? String(-value) : String(value);
+        return { negative, base10Value };
     }
 
     export function isValidTypeOnlyAliasUseSite(useSite: Node): boolean {

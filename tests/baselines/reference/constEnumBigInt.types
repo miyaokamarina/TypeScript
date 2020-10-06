@@ -1,0 +1,146 @@
+=== tests/cases/compiler/constEnumBigInt.ts ===
+const enum E1 {
+>E1 : E1
+
+    n1 = 10n,
+>n1 : E1
+>10n : 10n
+
+    n2 = n1,
+>n2 : E1
+>n1 : E1
+
+    n3 = n2 + 1,
+>n3 : E1
+>n2 + 1 : number
+>n2 : E1
+>1 : 1
+
+    n4 = n2 + 1n,
+>n4 : E1
+>n2 + 1n : any
+>n2 : E1
+>1n : 1n
+
+    n5,
+>n5 : E1
+
+    n6 = ~n5,
+>n6 : E1
+>~n5 : number
+>n5 : E1
+
+    n7 = -n6,
+>n7 : E1
+>-n6 : number
+>n6 : E1
+
+    n8 = n7 >> 1n,
+>n8 : E1
+>n7 >> 1n : any
+>n7 : E1
+>1n : 1n
+
+    n9 = n8 << 1n,
+>n9 : E1
+>n8 << 1n : any
+>n8 : E1
+>1n : 1n
+
+    n10 = n8 | n9,
+>n10 : E1
+>n8 | n9 : number
+>n8 : E1
+>n9 : E1
+
+    n11 = n9 & n10,
+>n11 : E1
+>n9 & n10 : number
+>n9 : E1
+>n10 : E1
+
+    n12 = n10 ^ n11,
+>n12 : E1
+>n10 ^ n11 : number
+>n10 : E1
+>n11 : E1
+
+    n13 = n12 - 1n,
+>n13 : E1
+>n12 - 1n : any
+>n12 : E1
+>1n : 1n
+
+    n14 = n13 * 2n,
+>n14 : E1
+>n13 * 2n : any
+>n13 : E1
+>2n : 2n
+
+    n15 = n14 / 2n,
+>n15 : E1
+>n14 / 2n : any
+>n14 : E1
+>2n : 2n
+
+    n16 = (n13 * n14) + n15,
+>n16 : E1
+>(n13 * n14) + n15 : number
+>(n13 * n14) : number
+>n13 * n14 : number
+>n13 : E1
+>n14 : E1
+>n15 : E1
+
+    n17 = +n16,
+>n17 : E1
+>+n16 : number
+>n16 : E1
+
+    n18 = n17 % 2n,
+>n18 : E1
+>n17 % 2n : any
+>n17 : E1
+>2n : 2n
+
+    n19 = 0n / 0n,
+>n19 : E1
+>0n / 0n : bigint
+>0n : 0n
+>0n : 0n
+}
+
+const enum E2 {
+>E2 : E2
+
+    n1 = 1n,
+>n1 : E2.n1
+>1n : 1n
+
+    n2,
+>n2 : E2.n2
+}
+
+const a = E1.n1 as const;
+>a : E1
+>E1.n1 as const : E1
+>E1.n1 : E1
+>E1 : typeof E1
+>n1 : E1
+
+const b = E2.n2 as const;
+>b : E2.n2
+>E2.n2 as const : E2.n2
+>E2.n2 : E2.n2
+>E2 : typeof E2
+>n2 : E2.n2
+
+
+enum E3 {
+>E3 : E3
+
+    n1 = 10n,
+>n1 : E3.n1
+>10n : 10n
+}
+

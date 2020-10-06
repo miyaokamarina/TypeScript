@@ -175,14 +175,14 @@ namespace ts {
     /**
      * Gets the constant value to emit for an expression representing an enum.
      */
-    export function getConstantValue(node: AccessExpression): string | number | undefined {
+    export function getConstantValue(node: AccessExpression): string | bigint | number | undefined {
         return node.emitNode?.constantValue;
     }
 
     /**
      * Sets the constant value to emit for an expression.
      */
-    export function setConstantValue(node: AccessExpression, value: string | number): AccessExpression {
+    export function setConstantValue(node: AccessExpression, value: string | bigint | number): AccessExpression {
         const emitNode = getOrCreateEmitNode(node);
         emitNode.constantValue = value;
         return node;
